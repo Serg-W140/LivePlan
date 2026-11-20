@@ -2,9 +2,16 @@ import { PlannerStore } from './store.js';
 
 export class TgPushSync {
   // ВСТАВЬ СЮДА СВОЙ АДРЕС ВОРКЕРА С /sync НА КОНЦЕ:
-  static BOT_SYNC_URL = 'https://life-planner-bot.labyt2.workers.dev/sync';
+  static BOT_BASE_URL = 'https://life-planner-bot.labyt2.workers.dev';
 
-     static extractTelegramUserId() {
+    static #setBadge(icon) {
+    const btn = document.getElementById('langToggleBtn');
+    if (!btn) return;
+    const base = btn.textContent.split(' ').at(0);
+    btn.textContent = `${base} ${icon}`;
+  }
+
+  static extractTelegramUserId() {
     const tg = window.Telegram?.WebApp;
     if (tg?.initDataUnsafe?.user?.id) {
       return tg.initDataUnsafe.user.id;
@@ -34,16 +41,22 @@ export class TgPushSync {
     return null;
   }
 
-  // Загрузка актуальной базы с сервера при открытии на любом устройстве
   static async pullScheduleFromBot() {
-    if (!this.BOT_BASE_URL || this.BOT_BASE_URL.includes('ТВОЙ_ВОРКЕР')) return false;
+    if (!this.BOT_BASE_URL || this.BOT_BASE_URL.includes('ТВОЙ_ВОРКЕР')) {
+      this.#setBadge('⚠️');
+      return false;
+    }
     const chatId = this.extractTelegramUserId();
     if (!chatId) return false;
 
     try {
       const resp = await fetch(`${this.BOT_BASE_URL}/load?chatId=${chatId}`);
-      if (!resp.ok) return false;
+      if (!resp.ok) {
+        this.#setBadge('❌');
+        return false;
+      }
       const remote = await resp.json();
+      this.#setBadge('☁️');
       if (remote.empty) return false;
 
       if (Array.isArray(remote.allAlarms)) {
@@ -63,13 +76,16 @@ export class TgPushSync {
       }
       return true;
     } catch (_) {
+      this.#setBadge('❌');
       return false;
     }
   }
 
-  // Отправка локальных изменений на сервер
   static async pushScheduleToBot() {
-    if (!this.BOT_BASE_URL || this.BOT_BASE_URL.includes('ТВОЙ_ВОРКЕР')) return;
+    if (!this.BOT_BASE_URL || this.BOT_BASE_URL.includes('ТВОЙ_ВОРКЕР')) {
+      this.#setBadge('⚠️');
+      return;
+    }
     const chatId = this.extractTelegramUserId();
     if (!chatId) return;
 
@@ -86,11 +102,14 @@ export class TgPushSync {
     };
 
     try {
-      await fetch(`${this.BOT_BASE_URL}/sync`, {
+      const resp = await fetch(`${this.BOT_BASE_URL}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-    } catch (_) {}
+      this.#setBadge(resp.ok ? '☁️' : '❌');
+    } catch (_) {
+      this.#setBadge('❌');
+    }
   }
 }
