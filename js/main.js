@@ -115,6 +115,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     todayView.render();
     stats.render();
   } else {
+    TgPushSync.initLinkUI(() => {
+        builder.renderExerciseOptions();
+        builder.renderSavedWorkouts();
+        planner.render();
+        todayView.render();
+        stats.render();
+    });
     await TgPushSync.pushScheduleToBot();
   }
 

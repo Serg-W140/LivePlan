@@ -277,8 +277,13 @@
                 <button type="button" id="importJsonBtn" class="btn btn-preset btn-sm" data-i18n="btnImportJson">⬆ Восстановить из файла</button>
             </div>
             <input type="file" id="importJsonInput" accept=".json,application/json" hidden>
+            <div class="row" style="margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border);">
+            <input type="text" id="linkTgIdInput" placeholder="Telegram ID (для синхронизации)" style="flex: 1;">
+            <button type="button" id="linkTgIdBtn" class="btn btn-accent btn-sm">☁️ Sync</button>
         </div>
-        
+        <small id="linkTgIdStatus" style="color: var(--accent);"></small>
+        </div>
+
       </div>
     </section>
 
