@@ -92,6 +92,7 @@ export class TgPushSync {
     }
     const chatId = this.extractTelegramUserId();
     if (!chatId) return false;
+    this.#syncInputUI(chatId);
 
     try {
       const resp = await fetch(`${this.BOT_BASE_URL}/load?chatId=${chatId}`);
@@ -132,6 +133,8 @@ export class TgPushSync {
     }
     const chatId = this.extractTelegramUserId();
     if (!chatId) return;
+    this.#syncInputUI(chatId);
+
 
     const allAlarms = PlannerStore.getAlarms();
     const payload = {
@@ -156,4 +159,13 @@ export class TgPushSync {
       this.#setBadge('❌');
     }
   }
+
+  static #syncInputUI(id) {
+    if (!id) return;
+    const input = document.getElementById('linkTgIdInput');
+    const hint = document.getElementById('linkTgIdStatus');
+    if (input && !input.value) input.value = id;
+    if (hint) hint.textContent = `☁️ ID: ${id}`;
+  }
 }
+
