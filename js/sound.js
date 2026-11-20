@@ -16,6 +16,33 @@ export class SoundEngine {
     }
   }
 
+  async requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      try {
+        await Notification.requestPermission();
+      } catch (_) {}
+    }
+  }
+
+  sendSystemNotification(title, bodyText = '') {
+    if ('vibrate' in navigator) {
+      try {
+        navigator.vibrate(Array.of(300, 150, 300, 150, 500));
+      } catch (_) {}
+    }
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body: bodyText,
+          icon: './icon.png',
+          tag: 'life-planner-alert',
+          renotify: true
+        });
+      } catch (_) {}
+    }
+  }
+
   speak(text, enabled) {
     if (!enabled || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
@@ -50,6 +77,11 @@ export class SoundEngine {
     this.stopAlarmLoop();
     const ring = () => {
       this.play(type);
+      if ('vibrate' in navigator) {
+        try {
+          navigator.vibrate(Array.of(400, 200, 400));
+        } catch (_) {}
+      }
       if (labelText) this.speak(labelText, true);
     };
     ring();
@@ -60,6 +92,11 @@ export class SoundEngine {
     if (this.alarmLoopId) {
       clearInterval(this.alarmLoopId);
       this.alarmLoopId = null;
+    }
+    if ('vibrate' in navigator) {
+      try {
+        navigator.vibrate(0);
+      } catch (_) {}
     }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();

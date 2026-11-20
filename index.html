@@ -26,7 +26,7 @@
       <button type="button" class="tab-btn" data-tab="workouts" data-i18n="tabWorkouts">📋 Тренировки</button>
     </nav>
 
-    <!-- ==================== 1. ВКЛАДКА «СЕГОДНЯ» ==================== -->
+     <!-- ==================== 1. ВКЛАДКА «СЕГОДНЯ» ==================== -->
     <section id="tab-today" class="tab-content active">
       <div class="settings">
         <div class="row">
@@ -34,7 +34,20 @@
             <h2 style="border:none; padding:0;" data-i18n="todayHeader">План на сегодня</h2>
             <small id="todayDateLabel" style="color: var(--accent); text-transform: capitalize;"></small>
           </div>
-          <small id="todayProgressMeta" style="color: var(--text-muted);"></small>
+          <div class="row" style="gap: 6px;">
+            <small id="todayProgressMeta" style="color: var(--text-muted);"></small>
+            <button type="button" id="toggleCalendarBtn" class="btn btn-preset btn-xs">🗓</button>
+          </div>
+        </div>
+
+        <!-- Выдвижная календарная сетка на месяц -->
+        <div id="calendarBox" class="step-adder" hidden>
+          <div class="row">
+            <button type="button" id="calPrevMonthBtn" class="btn btn-reset btn-xs">◀</button>
+            <strong id="calMonthTitle" style="text-transform: capitalize; font-size: 0.9rem;"></strong>
+            <button type="button" id="calNextMonthBtn" class="btn btn-reset btn-xs">▶</button>
+          </div>
+          <div id="calGrid" class="cal-grid"></div>
         </div>
 
         <div class="progress-track">

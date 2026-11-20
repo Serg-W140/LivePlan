@@ -17,7 +17,6 @@ export class PlannerManager {
 
   #cacheDOM() {
     this.dom = {
-      // Будильники
       alarmTimeInput: document.getElementById('alarmTimeInput'),
       alarmLabelInput: document.getElementById('alarmLabelInput'),
       alarmSoundSelect: document.getElementById('alarmSoundSelect'),
@@ -25,7 +24,6 @@ export class PlannerManager {
       saveAlarmBtn: document.getElementById('saveAlarmBtn'),
       alarmsList: document.getElementById('alarmsList'),
 
-      // События
       eventFormHeading: document.getElementById('eventFormHeading'),
       eventTitleInput: document.getElementById('eventTitleInput'),
       eventCategorySelect: document.getElementById('eventCategorySelect'),
@@ -35,7 +33,6 @@ export class PlannerManager {
       eventTimeInput: document.getElementById('eventTimeInput'),
       eventRemindInput: document.getElementById('eventRemindInput'),
 
-      // Поля правил
       ruleOnceBox: document.getElementById('ruleOnceBox'),
       eventDateInput: document.getElementById('eventDateInput'),
       ruleWeeklyBox: document.getElementById('ruleWeeklyBox'),
@@ -55,7 +52,6 @@ export class PlannerManager {
       eventsList: document.getElementById('eventsList'),
       exportIcsBtn: document.getElementById('exportIcsBtn'),
 
-      // Модалка звонка
       ringingModal: document.getElementById('ringingModal'),
       ringingSubtitle: document.getElementById('ringingSubtitle'),
       ringingEventTitle: document.getElementById('ringingEventTitle'),
@@ -65,7 +61,6 @@ export class PlannerManager {
   }
 
   #bindEvents() {
-    // Переключатели дней недели (чипсы)
     Array.of(this.dom.alarmDaysGroup, this.dom.eventDaysGroup).forEach((group) => {
       group?.addEventListener('click', (e) => {
         const chip = e.target.closest('.day-chip');
@@ -73,8 +68,8 @@ export class PlannerManager {
       });
     });
 
-    // Сохранение будильника
     this.dom.saveAlarmBtn.addEventListener('click', () => {
+      this.sound.requestNotificationPermission();
       const time = this.dom.alarmTimeInput.value || '07:30';
       const label = this.dom.alarmLabelInput.value.trim();
       const sound = this.dom.alarmSoundSelect.value;
@@ -87,7 +82,6 @@ export class PlannerManager {
       this.onDataChanged();
     });
 
-    // Действия со списком будильников
     this.dom.alarmsList.addEventListener('click', (e) => {
       const toggleEl = e.target.closest('[data-alarm-toggle]');
       const delBtn = e.target.closest('[data-alarm-del]');
@@ -110,15 +104,12 @@ export class PlannerManager {
       }
     });
 
-    // Переключение категории и правила события
     this.dom.eventCategorySelect.addEventListener('change', () => this.#updateEventFormVisibility());
     this.dom.eventRuleSelect.addEventListener('change', () => this.#updateEventFormVisibility());
 
-    // Сохранение / обновление события
     this.dom.saveEventBtn.addEventListener('click', () => this.#saveEvent());
     this.dom.cancelEventEditBtn.addEventListener('click', () => this.#resetEventForm());
 
-    // Редактирование или удаление существующего события (включая смену времени напоминания)
     this.dom.eventsList.addEventListener('click', (e) => {
       const editBtn = e.target.closest('[data-ev-edit]');
       const delBtn = e.target.closest('[data-ev-del]');
@@ -136,10 +127,8 @@ export class PlannerManager {
       }
     });
 
-    // Экспорт в .ics
     this.dom.exportIcsBtn?.addEventListener('click', () => this.#exportToICS());
 
-    // Кнопки звонка
     this.dom.dismissRingBtn.addEventListener('click', () => {
       this.sound.stopAlarmLoop();
       this.dom.ringingModal.hidden = true;
@@ -235,17 +224,20 @@ export class PlannerManager {
   }
 
   #saveEvent() {
+    this.sound.requestNotificationPermission();
     const category = this.dom.eventCategorySelect.value;
     const ruleType = this.dom.eventRuleSelect.value;
     const workoutId = category === 'workout' ? this.dom.eventWorkoutSelect.value : null;
     let title = this.dom.eventTitleInput.value.trim();
+
     if (!title && workoutId) {
-        const w = PlannerStore.getWorkouts().find((item) => item.id === workoutId);
-        if (w) title = w.name;
+      const w = PlannerStore.getWorkouts().find((item) => item.id === workoutId);
+      if (w) title = w.name;
     }
+
     if (!title) {
         alert(I18n.t('alertFillEvent'));
-        return;
+    return;
     }
     const remindVal = parseInt(this.dom.eventRemindInput.value, 10);
     const remindBefore = Number.isNaN(remindVal) ? 60 : Math.max(0, remindVal);
@@ -292,7 +284,9 @@ export class PlannerManager {
     }
     #renderDayChips() {
         const order = Array.of(1, 2, 3, 4, 5, 6, 0);
-        const html = order.map((d) => `<button type="button" class="day-chip" data-day="${d}">${I18n.t('wdShort' + d)}</button>`).join('');
+        const html = order
+        .map((d) => `<button type="button" class="day-chip" data-day="${d}">${I18n.t('wdShort' + d)}</button>`)
+        .join('');
         this.dom.alarmDaysGroup.innerHTML = html;
         this.dom.eventDaysGroup.innerHTML = html;
     }
@@ -305,7 +299,9 @@ export class PlannerManager {
     }
     renderWorkoutOptions() {
         const workouts = PlannerStore.getWorkouts();
-        this.dom.eventWorkoutSelect.innerHTML = workouts.map((w) => `<option value="${w.id}">${I18n.t(w.name)}</option>`).join('');
+        this.dom.eventWorkoutSelect.innerHTML = workouts
+        .map((w) => `<option value="${w.id}">${I18n.t(w.name)}</option>`)
+        .join('');
     }
     renderAlarms() {
         const alarms = PlannerStore.getAlarms();
@@ -313,7 +309,8 @@ export class PlannerManager {
             this.dom.alarmsList.innerHTML = `<small style="color:#888">${I18n.t('noAlarmsYet')}</small>`;
             return;
         }
-        this.dom.alarmsList.innerHTML = alarms.map((a) => {
+        this.dom.alarmsList.innerHTML = alarms
+        .map((a) => {
             const daysLabel = a.days && a.days.length > 0
                 ? a.days.map((d) => I18n.t('wdShort' + d)).join(', ')
                 : I18n.t('everyDay');
@@ -332,15 +329,14 @@ export class PlannerManager {
             let ruleDesc = '';
             if (ev.ruleType === 'once') ruleDesc = ev.date;
             else if (ev.ruleType === 'weekly') ruleDesc = (ev.days || Array.of()).map((d) => I18n.t('wdShort' + d)).join(', ');
-            else if (ev.ruleType === 'monthly') ruleDesc = `${ev.dayOfMonth} число`;
+            else if (ev.ruleType === 'monthly') ruleDesc = I18n.t('ruleMonthlyDesc', { day: ev.dayOfMonth });
             else if (ev.ruleType === 'yearly') ruleDesc = `${ev.day} ${I18n.t('mon' + ev.month)}`;
-            else if (ev.ruleType === 'cycle') ruleDesc = `раз в ${ev.gap} дн.`;
+            else if (ev.ruleType === 'cycle') ruleDesc = I18n.t('ruleCycleDesc', { gap: ev.gap });
             const remindTxt = ev.remindBefore > 0 ?  `• 🔔 ${ev.remindBefore}m` : '';
             return  `<div class="list-item"> <div class="list-item-info"> <strong>${ev.time} — ${I18n.t(ev.title)}</strong> <small>${ruleDesc}${remindTxt}</small> </div> <div class="item-actions"> <button type="button" class="btn btn-accent btn-xs" data-ev-edit="${ev.id}">✎</button> <button type="button" class="btn btn-danger btn-xs" data-ev-del="${ev.id}">✕</button> </div> </div>`;
         })
         .join('');
     }
-    // Фоновая проверка срабатывания будильников и напоминаний каждую минуту
     #startClockMonitor() {
         setInterval(() => {
             const now = new Date();
@@ -350,13 +346,11 @@ export class PlannerManager {
             items.forEach((item) => {
                 const parts = item.time.split(':');
                 const targetMinutes = Number(parts.at(0)) * 60 + Number(parts.at(1));
-                // 1. Точное время события или будильника
                 const exactKey = `${dateStr}_${item.uid}_exact`;
                 if (currMinutes === targetMinutes && !this.triggeredKeys.has(exactKey)) {
                     this.triggeredKeys.add(exactKey);
                     this.#triggerRing(item, 0);
                 }
-                // 2. Предварительное напоминание (например, за 60 мин или сколько задано в событии)
                 if (item.remindBefore > 0) {
                     const remindMinutes = targetMinutes - item.remindBefore;
                     const remKey = `${dateStr}_${item.uid}_rem_${item.remindBefore}`;
@@ -371,12 +365,13 @@ export class PlannerManager {
     #triggerRing(item, minutesBefore) {
         this.activeRingingItem = item;
         const soundType = item.raw?.sound || (item.kind === 'alarm' ? 'melody' : PlannerStore.getSettings().soundType);
-        this.dom.subtitleText = minutesBefore > 0
+        const subtitle = minutesBefore > 0
             ? I18n.t('ringingReminderPrefix', { min: minutesBefore })
             : '';
-        this.dom.ringingSubtitle.textContent = this.dom.subtitleText;
+        this.dom.ringingSubtitle.textContent = subtitle;
         this.dom.ringingEventTitle.textContent = `${item.time} — ${item.title}`;
         this.dom.ringingModal.hidden = false;
+        this.sound.sendSystemNotification(`${item.time} — ${item.title}`, subtitle || I18n.t('ringingTitle'));
         this.sound.startAlarmLoop(soundType, item.title);
     }
     #exportToICS() {
@@ -392,53 +387,53 @@ export class PlannerManager {
         const dayMap = Array.of('SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA');
         const blocks = Array.of();
         events.forEach((ev, idx) => {
-        const parts = (ev.time || '09:00').split(':');
-        const hh = Number(parts.at(0));
-        const mm = Number(parts.at(1));
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
-        let rrule = '';
-        if (ev.ruleType === 'once' && ev.date) {
-            const dParts = ev.date.split('-');
-            start.setFullYear(Number(dParts.at(0)), Number(dParts.at(1)) - 1, Number(dParts.at(2)));
-        } else if (ev.ruleType === 'weekly' && ev.days?.length) {
-            const byDay = ev.days.map((d) => dayMap.at(d)).join(',');
-            rrule = `RRULE:FREQ=WEEKLY;BYDAY=${byDay}`;
-        } else if (ev.ruleType === 'monthly') {
-            start.setDate(Number(ev.dayOfMonth) || 1);
-            rrule = `RRULE:FREQ=MONTHLY;BYMONTHDAY=${Number(ev.dayOfMonth) || 1}`;
-        } else if (ev.ruleType === 'yearly') {
-            start.setMonth((Number(ev.month) || 1) - 1, Number(ev.day) || 1);
-            rrule = 'RRULE:FREQ=YEARLY';
-        } else if (ev.ruleType === 'cycle') {
-            rrule = `RRULE:FREQ=DAILY;INTERVAL=${Math.max(1, Number(ev.gap) || 2)}`;
-        }
-        const end = new Date(start.getTime() + 30 * 60000);
-        const remindMin = ev.remindBefore !== undefined ? Number(ev.remindBefore) : 60;
-        blocks.push(
-            Array.of(
-                'BEGIN:VEVENT',
-                `UID:lp-${Date.now()}-${idx}@lifeplanner`,
-                `DTSTAMP:${formatICS(now)}`,
-                `DTSTART:${formatICS(start)}`,
-                `DTEND:${formatICS(end)}`,
-                `SUMMARY:${I18n.t(ev.title)}`,
-                rrule,
-                remindMin > 0 ? 'BEGIN:VALARM' : '',
-                remindMin > 0 ? 'ACTION:DISPLAY' : '',
-                remindMin > 0 ? `DESCRIPTION:${I18n.t(ev.title)}` : '',
-                remindMin > 0 ? `TRIGGER:-PT${remindMin}M` : '',
-                remindMin > 0 ? 'END:VALARM' : '',
-                'END:VEVENT'
-            ).filter(Boolean).join('\r\n')
-        );
-    });
-    const ics = Array.of('BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//LifePlanner//RU', ...blocks, 'END:VCALENDAR').join('\r\n');
-    const blob = new Blob(Array.of(ics), { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'life-planner.ics';
-    a.click();
-    URL.revokeObjectURL(url);
-}
+            const parts = (ev.time || '09:00').split(':');
+            const hh = Number(parts.at(0));
+            const mm = Number(parts.at(1));
+            const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
+            let rrule = '';
+            if (ev.ruleType === 'once' && ev.date) {
+                const dParts = ev.date.split('-');
+                start.setFullYear(Number(dParts.at(0)), Number(dParts.at(1)) - 1, Number(dParts.at(2)));
+            } else if (ev.ruleType === 'weekly' && ev.days?.length) {
+                const byDay = ev.days.map((d) => dayMap.at(d)).join(',');
+                rrule = `RRULE:FREQ=WEEKLY;BYDAY=${byDay}`;
+            } else if (ev.ruleType === 'monthly') {
+                start.setDate(Number(ev.dayOfMonth) || 1);
+                rrule = `RRULE:FREQ=MONTHLY;BYMONTHDAY=${Number(ev.dayOfMonth) || 1}`;
+            } else if (ev.ruleType === 'yearly') {
+                start.setMonth((Number(ev.month) || 1) - 1, Number(ev.day) || 1);
+                rrule = 'RRULE:FREQ=YEARLY';
+            } else if (ev.ruleType === 'cycle') {
+                rrule = `RRULE:FREQ=DAILY;INTERVAL=${Math.max(1, Number(ev.gap) || 2)}`;
+            }
+            const end = new Date(start.getTime() + 30 * 60000);
+            const remindMin = ev.remindBefore !== undefined ? Number(ev.remindBefore) : 60;
+            blocks.push(
+                Array.of(
+                    'BEGIN:VEVENT',
+                    `UID:lp-${Date.now()}-${idx}@lifeplanner`,
+                    `DTSTAMP:${formatICS(now)}`,
+                    `DTSTART:${formatICS(start)}`,
+                    `DTEND:${formatICS(end)}`,
+                    `SUMMARY:${I18n.t(ev.title)}`,
+                    rrule,
+                    remindMin > 0 ? 'BEGIN:VALARM' : '',
+                    remindMin > 0 ? 'ACTION:DISPLAY' : '',
+                    remindMin > 0 ? `DESCRIPTION:${I18n.t(ev.title)}` : '',
+                    remindMin > 0 ? `TRIGGER:-PT${remindMin}M` : '',
+                    remindMin > 0 ? 'END:VALARM' : '',
+                    'END:VEVENT'
+                ).filter(Boolean).join('\r\n')
+            );
+        });
+        const ics = Array.of('BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//LifePlanner//RU', ...blocks, 'END:VCALENDAR').join('\r\n');
+        const blob = new Blob(Array.of(ics), { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'life-planner.ics';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
 }

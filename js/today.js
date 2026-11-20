@@ -5,6 +5,8 @@ export class TodayView {
   constructor({ onRunWorkout, onDataChanged }) {
     this.onRunWorkout = onRunWorkout;
     this.onDataChanged = onDataChanged;
+    this.selectedDate = new Date();
+    this.viewMonthDate = new Date(this.selectedDate.getFullYear(), this.selectedDate.getMonth(), 1);
 
     this.#cacheDOM();
     this.#bindEvents();
@@ -17,6 +19,12 @@ export class TodayView {
       todayProgressMeta: document.getElementById('todayProgressMeta'),
       todayProgressBar: document.getElementById('todayProgressBar'),
       todayItemsList: document.getElementById('todayItemsList'),
+      toggleCalendarBtn: document.getElementById('toggleCalendarBtn'),
+      calendarBox: document.getElementById('calendarBox'),
+      calPrevMonthBtn: document.getElementById('calPrevMonthBtn'),
+      calNextMonthBtn: document.getElementById('calNextMonthBtn'),
+      calMonthTitle: document.getElementById('calMonthTitle'),
+      calGrid: document.getElementById('calGrid'),
       openEveningBtn: document.getElementById('openEveningBtn'),
       eveningModal: document.getElementById('eveningModal'),
       closeEveningBtn: document.getElementById('closeEveningBtn'),
@@ -31,18 +39,41 @@ export class TodayView {
   }
 
   #bindEvents() {
+    this.dom.toggleCalendarBtn?.addEventListener('click', () => {
+      this.dom.calendarBox.hidden = !this.dom.calendarBox.hidden;
+      if (!this.dom.calendarBox.hidden) this.renderCalendar();
+    });
+
+    this.dom.calPrevMonthBtn?.addEventListener('click', () => {
+      this.viewMonthDate.setMonth(this.viewMonthDate.getMonth() - 1);
+      this.renderCalendar();
+    });
+
+    this.dom.calNextMonthBtn?.addEventListener('click', () => {
+      this.viewMonthDate.setMonth(this.viewMonthDate.getMonth() + 1);
+      this.renderCalendar();
+    });
+
+    this.dom.calGrid?.addEventListener('click', (e) => {
+      const cell = e.target.closest('[data-cal-date]');
+      if (!cell) return;
+      const parts = cell.dataset.calDate.split('-');
+      this.selectedDate = new Date(Number(parts.at(0)), Number(parts.at(1)) - 1, Number(parts.at(2)));
+      this.render();
+    });
+
     this.dom.todayItemsList.addEventListener('click', (e) => {
       const checkBtn = e.target.closest('[data-toggle-uid]');
       const runBtn = e.target.closest('[data-run-uid]');
 
       if (checkBtn) {
         const uid = checkBtn.dataset.toggleUid;
-        PlannerStore.toggleCompleted(PlannerStore.getLocalDateStr(), uid);
+        PlannerStore.toggleCompleted(PlannerStore.getLocalDateStr(this.selectedDate), uid);
         this.render();
       } else if (runBtn) {
         const uid = runBtn.dataset.runUid;
-        const todayItems = PlannerStore.getItemsForDate(new Date());
-        const item = todayItems.find((i) => i.uid === uid);
+        const dayItems = PlannerStore.getItemsForDate(this.selectedDate);
+        const item = dayItems.find((i) => i.uid === uid);
         if (item?.workout) {
           this.onRunWorkout(item.workout, item.uid);
         }
@@ -119,22 +150,73 @@ export class TodayView {
     });
   }
 
-  render() {
-    const now = new Date();
+  renderCalendar() {
+    if (!this.dom.calGrid) return;
+    const year = this.viewMonthDate.getFullYear();
+    const month = this.viewMonthDate.getMonth();
     const locale = I18n.lang === 'ru' ? 'ru-RU' : 'en-US';
-    this.dom.todayDateLabel.textContent = now.toLocaleDateString(locale, {
+
+    this.dom.calMonthTitle.textContent = this.viewMonthDate.toLocaleDateString(locale, {
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const firstDay = new Date(year, month, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7; // Пн = 0 ... Вс = 6
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const todayStr = PlannerStore.getLocalDateStr(new Date());
+    const selectedStr = PlannerStore.getLocalDateStr(this.selectedDate);
+
+    const wdHeaders = Array.of(1, 2, 3, 4, 5, 6, 0)
+      .map((d) => `<div class="cal-head">${I18n.t('wdShort' + d)}</div>`)
+      .join('');
+
+    let cells = '';
+    for (let i = 0; i < startOffset; i += 1) {
+      cells += '<div class="cal-cell empty"></div>';
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const cellDate = new Date(year, month, day);
+      const cellStr = PlannerStore.getLocalDateStr(cellDate);
+      const dayItems = PlannerStore.getItemsForDate(cellDate);
+      const hasEvents = dayItems.some((item) => item.kind !== 'alarm');
+      const hasBirthday = dayItems.some((item) => item.kind === 'birthday');
+
+      const cls = Array.of('cal-cell');
+      if (cellStr === todayStr) cls.push('today');
+      if (cellStr === selectedStr) cls.push('selected');
+
+      const dot = hasBirthday
+        ? '<span class="cal-dot birthday"></span>'
+        : (hasEvents ? '<span class="cal-dot"></span>' : '');
+
+      cells += `<button type="button" class="${cls.join(' ')}" data-cal-date="${cellStr}">${day}${dot}</button>`;
+    }
+
+    this.dom.calGrid.innerHTML = wdHeaders + cells;
+  }
+
+  render() {
+    const locale = I18n.lang === 'ru' ? 'ru-RU' : 'en-US';
+    this.dom.todayDateLabel.textContent = this.selectedDate.toLocaleDateString(locale, {
       weekday: 'long',
       day: 'numeric',
       month: 'long'
     });
 
-    const items = PlannerStore.getItemsForDate(now);
+    const items = PlannerStore.getItemsForDate(this.selectedDate);
     const total = items.length;
     const doneCount = items.filter((i) => i.done).length;
     const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
     this.dom.todayProgressMeta.textContent = I18n.t('progressMeta', { done: doneCount, total });
     this.dom.todayProgressBar.style.width = `${pct}%`;
+
+    if (!this.dom.calendarBox?.hidden) {
+      this.renderCalendar();
+    }
 
     if (items.length === 0) {
       this.dom.todayItemsList.innerHTML = `<div class="list-item"><small style="color:#888">${I18n.t('noItemsToday')}</small></div>`;
@@ -183,32 +265,24 @@ export class TodayView {
   renderTomorrowModal() {
     const todayItems = PlannerStore.getItemsForDate(new Date());
     const unfinished = todayItems.filter((i) => !i.done && i.kind !== 'alarm');
-
     if (unfinished.length > 0) {
-      this.dom.carryOverBox.hidden = false;
-      this.dom.carryOverTitle.textContent = I18n.t('carryOverTitle', { count: unfinished.length });
+        this.dom.carryOverBox.hidden = false;
+        this.dom.carryOverTitle.textContent = I18n.t('carryOverTitle', { count: unfinished.length });
     } else {
-      this.dom.carryOverBox.hidden = true;
+        this.dom.carryOverBox.hidden = true;
     }
-
     const tomorrowDate = new Date();
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowItems = PlannerStore.getItemsForDate(tomorrowDate);
-
     if (tomorrowItems.length === 0) {
-      this.dom.tomorrowItemsList.innerHTML = `<small style="color:#888">${I18n.t('noItemsTomorrow')}</small>`;
-      return;
+        this.dom.tomorrowItemsList.innerHTML = `<small style="color:#888">${I18n.t('noItemsTomorrow')}</small>`;
+        return;
     }
-
     this.dom.tomorrowItemsList.innerHTML = tomorrowItems
-      .map((item) => {
+    .map((item) => {
         const canDelete = item.raw?.ruleType === 'once';
-        return `
-          <div class="list-item" style="padding: 8px 10px;">
-            <span><strong>${item.time}</strong> — ${item.title}</span>
-            ${canDelete ? `<button type="button" class="btn btn-danger btn-xs" data-del-tmr="${item.sourceId}">✕</button>` : ''}
-          </div>`;
-      })
-      .join('');
-  }
+        return `<div class="list-item" style="padding: 8px 10px;"> <span><strong>${item.time}</strong> — ${item.title}</span> ${canDelete ?`✕ `: ''} </div>`;
+    })
+    .join('');
+    }
 }
