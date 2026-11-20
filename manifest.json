@@ -1,0 +1,19 @@
+{
+  "name": "LifePlanner & Timer",
+  "short_name": "Планер",
+  "description": "Планировщик жизни, будильники, календарь событий и интервальный таймер",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LifePlanner & Таймер</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#121212">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Шапка -->
+    <header class="app-header">
+      <h1 class="app-logo" data-i18n="appTitle">LifePlanner & Таймер</h1>
+      <button type="button" id="langToggleBtn" class="btn btn-reset btn-xs">EN</button>
+    </header>
+
+    <!-- Навигация по 4 вкладкам -->
+    <nav class="tabs tabs-4" id="mainTabs">
+      <button type="button" class="tab-btn active" data-tab="today" data-i18n="tabToday">📅 Сегодня</button>
+      <button type="button" class="tab-btn" data-tab="timer" data-i18n="tabTimer">⏱ Таймер</button>
+      <button type="button" class="tab-btn" data-tab="planner" data-i18n="tabPlanner">⏰ Планер</button>
+      <button type="button" class="tab-btn" data-tab="workouts" data-i18n="tabWorkouts">📋 Тренировки</button>
+    </nav>
+
+    <!-- ==================== 1. ВКЛАДКА «СЕГОДНЯ» ==================== -->
+    <section id="tab-today" class="tab-content active">
+      <div class="settings">
+        <div class="row">
+          <div>
+            <h2 style="border:none; padding:0;" data-i18n="todayHeader">План на сегодня</h2>
+            <small id="todayDateLabel" style="color: var(--accent); text-transform: capitalize;"></small>
+          </div>
+          <small id="todayProgressMeta" style="color: var(--text-muted);"></small>
+        </div>
+
+        <div class="progress-track">
+          <div id="todayProgressBar" class="progress-fill" style="width: 0%;"></div>
+        </div>
+
+        <div id="todayItemsList" class="workout-list"></div>
+
+        <button type="button" id="openEveningBtn" class="btn btn-accent full-btn" data-i18n="btnEveningReview">
+          🌙 Итоги дня и план на завтра
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== 2. ВКЛАДКА «ТАЙМЕР» ==================== -->
+    <section id="tab-timer" class="tab-content">
+      <div id="display" class="display">
+        <div id="exerciseTitle" class="exercise-title">Свободный режим</div>
+        <div id="statusText" class="status">ГОТОВ К СТАРТУ</div>
+        <div id="timeText" class="time">03:00</div>
+        <div id="roundText" class="round-info">Подход: 1 / 3</div>
+        <div id="nextText" class="next-info"></div>
+      </div>
+
+      <div class="controls">
+        <button type="button" id="startBtn" class="btn btn-start" data-i18n="btnStart">Старт</button>
+        <button type="button" id="resetBtn" class="btn btn-reset" data-i18n="btnReset">Сброс</button>
+      </div>
+
+      <div class="presets" id="presetsContainer">
+        <button type="button" class="btn btn-preset" data-rounds="3" data-work="180" data-rest="60" data-sound="gong" data-i18n="presetBox">🥊 Бокс (3×3м / 1м)</button>
+        <button type="button" class="btn btn-preset" data-rounds="5" data-work="30" data-rest="60" data-sound="whistle" data-i18n="presetInterval">⏱ 5×30с / 1м</button>
+        <button type="button" class="btn btn-preset" data-rounds="8" data-work="20" data-rest="10" data-sound="beep" data-i18n="presetTabata">🔥 Табата (8×20с/10с)</button>
+        <button type="button" id="testSoundBtn" class="btn btn-preset" data-i18n="btnTestSound">🔊 Тест</button>
+      </div>
+
+      <div id="quickSettings" class="settings">
+        <h2 data-i18n="quickSettingsTitle">Быстрая настройка таймера</h2>
+        <div class="row">
+          <label for="roundsInput" data-i18n="roundsLabel">Подходов</label>
+          <input type="number" id="roundsInput" min="1" max="99" value="3">
+        </div>
+        <div class="row">
+          <label data-i18n="workTimeLabel">Работа (мин : сек)</label>
+          <div class="time-inputs">
+            <input type="number" id="workMin" min="0" max="59" value="3"> :
+            <input type="number" id="workSec" min="0" max="59" value="0">
+          </div>
+        </div>
+        <div class="row">
+          <label data-i18n="restTimeLabel">Отдых (мин : сек)</label>
+          <div class="time-inputs">
+            <input type="number" id="restMin" min="0" max="59" value="1"> :
+            <input type="number" id="restSec" min="0" max="59" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="settings">
+        <h2 data-i18n="soundSettingsTitle">Звук и голос</h2>
+        <div class="row">
+          <label for="prepSec" data-i18n="prepSecLabel">Подготовка перед стартом (сек)</label>
+          <input type="number" id="prepSec" min="0" max="60" value="5">
+        </div>
+        <div class="row">
+          <label for="soundType" data-i18n="soundTypeLabel">Основной сигнал</label>
+          <select id="soundType">
+            <option value="gong" data-i18n="soundGong">Боксёрский гонг</option>
+            <option value="whistle" data-i18n="soundWhistle">Свисток тренера</option>
+            <option value="beep" data-i18n="soundBeep">Электронный сигнал</option>
+            <option value="melody" data-i18n="soundMelody">Мягкая мелодия</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="voiceCheck" data-i18n="voiceCheckLabel">Голосовой помощник</label>
+          <input type="checkbox" id="voiceCheck" checked>
+        </div>
+        <div class="row">
+          <label for="warnCheck" data-i18n="warnCheckLabel">Сигнал за 10 сек до конца</label>
+          <input type="checkbox" id="warnCheck" checked>
+        </div>
+        <div class="row">
+          <label for="tickCheck" data-i18n="tickCheckLabel">Тиканье секунд в работе</label>
+          <input type="checkbox" id="tickCheck">
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. ВКЛАДКА «ПЛАНЕР И БУДИЛЬНИКИ» ==================== -->
+    <section id="tab-planner" class="tab-content">
+      <!-- Блок будильников -->
+      <div class="settings">
+        <h2 data-i18n="alarmsSectionTitle">⏰ Будильники</h2>
+        <div class="step-adder">
+          <div class="row">
+            <label for="alarmTimeInput" data-i18n="alarmTimeLabel">Время</label>
+            <input type="time" id="alarmTimeInput" value="07:30">
+          </div>
+          <input type="text" id="alarmLabelInput" class="full-input" data-i18n-ph="alarmLabelPh" placeholder="Название (например: Подъём на работу)">
+          <div class="row">
+            <label for="alarmSoundSelect" data-i18n="alarmSoundLabel">Мелодия</label>
+            <select id="alarmSoundSelect">
+              <option value="melody" data-i18n="soundMelody">Мягкая мелодия</option>
+              <option value="gong" data-i18n="soundGong">Боксёрский гонг</option>
+              <option value="whistle" data-i18n="soundWhistle">Свисток тренера</option>
+              <option value="beep" data-i18n="soundBeep">Электронный сигнал</option>
+            </select>
+          </div>
+          <div id="alarmDaysGroup" class="days-chips"></div>
+          <button type="button" id="saveAlarmBtn" class="btn btn-accent full-btn" data-i18n="btnSaveAlarm">+ Добавить будильник</button>
+        </div>
+        <div id="alarmsList" class="workout-list"></div>
+      </div>
+
+      <!-- Блок событий, напоминаний и дней рождения -->
+      <div class="settings">
+        <h2 data-i18n="eventsSectionTitle">🗓 События, напоминания и даты</h2>
+        <div class="step-adder">
+          <strong id="eventFormHeading" style="color: var(--accent); font-size: 0.92rem;" data-i18n="eventFormTitleNew">Новое событие</strong>
+          <input type="text" id="eventTitleInput" class="full-input" data-i18n-ph="eventTitlePh" placeholder="Название (например: День рождения мамы или Оплата ЖКХ)">
+
+          <div class="row">
+            <label for="eventCategorySelect" data-i18n="eventCategoryLabel">Тип</label>
+            <select id="eventCategorySelect">
+              <option value="event" data-i18n="catEvent">📌 Событие / Дело</option>
+              <option value="birthday" data-i18n="catBirthday">🎂 День рождения / Дата</option>
+              <option value="workout" data-i18n="catWorkout">🏋️ Тренировка по расписанию</option>
+            </select>
+          </div>
+
+          <div id="eventWorkoutRow" class="row" hidden>
+            <label for="eventWorkoutSelect" data-i18n="eventWorkoutLabel">Программа тренировки</label>
+            <select id="eventWorkoutSelect"></select>
+          </div>
+
+          <div class="row">
+            <label for="eventRuleSelect" data-i18n="eventRuleLabel">Повторение</label>
+            <select id="eventRuleSelect">
+              <option value="once" data-i18n="ruleOnce">Один раз (конкретная дата)</option>
+              <option value="weekly" data-i18n="ruleWeekly">По дням недели</option>
+              <option value="monthly" data-i18n="ruleMonthly">Ежемесячно (число месяца)</option>
+              <option value="yearly" data-i18n="ruleYearly">Ежегодно (день и месяц)</option>
+              <option value="cycle" data-i18n="ruleCycle">Скользящий цикл (раз в N дней)</option>
+            </select>
+          </div>
+
+          <!-- Правило: Один раз -->
+          <div id="ruleOnceBox" class="row">
+            <label for="eventDateInput" data-i18n="eventDateLabel">Дата</label>
+            <input type="date" id="eventDateInput">
+          </div>
+
+          <!-- Правило: По дням недели -->
+          <div id="ruleWeeklyBox" hidden>
+            <div id="eventDaysGroup" class="days-chips"></div>
+          </div>
+
+          <!-- Правило: Ежемесячно -->
+          <div id="ruleMonthlyBox" class="row" hidden>
+            <label for="eventMonthDayInput" data-i18n="eventDayOfMonthLabel">Число месяца (1–31)</label>
+            <input type="number" id="eventMonthDayInput" min="1" max="31" value="15">
+          </div>
+
+          <!-- Правило: Ежегодно -->
+          <div id="ruleYearlyBox" style="display:flex; flex-direction:column; gap:8px;" hidden>
+            <div class="row">
+              <label for="eventYearMonthSelect" data-i18n="eventMonthLabel">Месяц</label>
+              <select id="eventYearMonthSelect"></select>
+            </div>
+            <div class="row">
+              <label for="eventYearDayInput" data-i18n="eventDayLabel">День</label>
+              <input type="number" id="eventYearDayInput" min="1" max="31" value="1">
+            </div>
+            <div class="row">
+              <label for="eventBirthYearInput" data-i18n="eventBirthYearLabel">Год (необязательно, для возраста)</label>
+              <input type="number" id="eventBirthYearInput" min="1900" max="2100" placeholder="1990">
+            </div>
+          </div>
+
+          <!-- Правило: Скользящий цикл -->
+          <div id="ruleCycleBox" style="display:flex; flex-direction:column; gap:8px;" hidden>
+            <div class="row">
+              <label for="eventCycleGapInput" data-i18n="cycleGapLabel">Интервал (раз в N дней)</label>
+              <input type="number" id="eventCycleGapInput" min="1" max="60" value="2">
+            </div>
+            <div class="row">
+              <label for="eventCycleStartInput" data-i18n="cycleStartLabel">Дата старта цикла</label>
+              <input type="date" id="eventCycleStartInput">
+            </div>
+          </div>
+
+          <div class="row">
+            <label for="eventTimeInput" data-i18n="eventTimeLabel">Время</label>
+            <input type="time" id="eventTimeInput" value="09:00">
+          </div>
+
+          <div class="row">
+            <label for="eventRemindInput" data-i18n="eventRemindLabel">Напомнить за (мин, по умолч. 60)</label>
+            <input type="number" id="eventRemindInput" min="0" max="1440" value="60">
+          </div>
+
+          <button type="button" id="saveEventBtn" class="btn btn-start full-btn" data-i18n="btnSaveEvent">💾 Сохранить событие</button>
+          <button type="button" id="cancelEventEditBtn" class="btn btn-reset full-btn" data-i18n="btnCancelEventEdit" hidden>Отмена</button>
+        </div>
+
+        <div id="eventsList" class="workout-list"></div>
+
+        <button type="button" id="exportIcsBtn" class="btn btn-preset full-btn" data-i18n="btnExportCalendar">
+          📅 Экспорт в календарь телефона (.ics)
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== 4. ВКЛАДКА «ТРЕНИРОВКИ» ==================== -->
+    <section id="tab-workouts" class="tab-content">
+      <div class="settings">
+        <h2 data-i18n="myWorkoutsTitle">Мои программы тренировок</h2>
+        <div id="savedWorkoutsList" class="workout-list"></div>
+      </div>
+
+      <div class="settings">
+        <h2 data-i18n="createWorkoutTitle">Конструктор программы</h2>
+        <input type="text" id="workoutNameInput" class="full-input" data-i18n-ph="workoutNamePh" placeholder="Название программы (например: Грудь и спина)">
+
+        <div class="step-adder">
+          <div class="row">
+            <label for="exerciseSelect" data-i18n="exerciseLabel">Упражнение</label>
+            <select id="exerciseSelect"></select>
+          </div>
+          <div id="customExRow" class="row" hidden>
+            <input type="text" id="customExInput" class="full-input" data-i18n-ph="customExPh" placeholder="Название упражнения">
+          </div>
+
+          <div class="grid-3">
+            <div>
+              <small data-i18n="setsCol">Подходы</small>
+              <input type="number" id="stepSets" min="1" max="50" value="3">
+            </div>
+            <div>
+              <small data-i18n="workCol">Работа (сек)</small>
+              <input type="number" id="stepWork" min="5" max="3600" value="30">
+            </div>
+            <div>
+              <small data-i18n="restCol">Отдых (сек)</small>
+              <input type="number" id="stepRest" min="0" max="600" value="30">
+            </div>
+          </div>
+
+          <div class="row">
+            <label for="stepAfterRest" data-i18n="afterRestLabel">Отдых после упражнения (сек)</label>
+            <input type="number" id="stepAfterRest" min="0" max="600" value="60">
+          </div>
+
+          <button type="button" id="addStepBtn" class="btn btn-preset full-btn" data-i18n="btnAddStep">+ Добавить шаг в программу</button>
+        </div>
+
+        <div id="draftStepsList" class="draft-list"></div>
+
+        <button type="button" id="saveWorkoutBtn" class="btn btn-start full-btn" data-i18n="btnSaveWorkout">💾 Сохранить программу</button>
+        <button type="button" id="cancelEditWorkoutBtn" class="btn btn-reset full-btn" data-i18n="btnCancelEdit" hidden>Отмена / Новая</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- МОДАЛКА «ИТОГИ ДНЯ И ПЛАН НА ЗАВТРА» -->
+  <div id="eveningModal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <div class="row">
+        <h2 style="font-size:1.1rem; color:var(--accent);" data-i18n="tomorrowHeader">План на завтра</h2>
+        <button type="button" id="closeEveningBtn" class="btn btn-reset btn-xs" data-i18n="btnClose">Закрыть</button>
+      </div>
+
+      <div id="carryOverBox" class="step-adder" style="border: 1px solid var(--prep);" hidden>
+        <small id="carryOverTitle" style="color: var(--prep); font-weight:700;"></small>
+        <button type="button" id="carryOverAllBtn" class="btn btn-pause btn-sm full-btn" data-i18n="btnCarryOverAll">Перенести всё на завтра</button>
+      </div>
+
+      <div class="step-adder">
+        <input type="text" id="tomorrowTaskInput" class="full-input" data-i18n-ph="quickTaskPh" placeholder="Новая задача на завтра (например: Позвонить врачу)">
+        <div class="row">
+          <input type="time" id="tomorrowTaskTime" value="10:00">
+          <button type="button" id="addTomorrowTaskBtn" class="btn btn-start btn-sm" style="flex:1;" data-i18n="btnAddTaskTomorrow">+ Добавить на завтра</button>
+        </div>
+      </div>
+
+      <div id="tomorrowItemsList" class="workout-list"></div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА СРАБАТЫВАНИЯ БУДИЛЬНИКА / НАПОМИНАНИЯ -->
+  <div id="ringingModal" class="modal-backdrop" hidden>
+    <div class="modal-card" style="text-align: center; border: 2px solid var(--accent);">
+      <h2 style="color: var(--accent);" data-i18n="ringingTitle">⏰ Сработал сигнал!</h2>
+      <small id="ringingSubtitle" style="color: var(--prep); font-weight: 700;"></small>
+      <div id="ringingEventTitle" style="font-size: 1.3rem; font-weight: 800; margin: 10px 0;"></div>
+      <div class="controls">
+        <button type="button" id="snoozeRingBtn" class="btn btn-pause" data-i18n="btnSnooze">💤 Отложить на 10 мин</button>
+        <button type="button" id="dismissRingBtn" class="btn btn-start" data-i18n="btnDismiss">✅ Отключить</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
