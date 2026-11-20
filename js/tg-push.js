@@ -2,7 +2,7 @@ import { PlannerStore } from './store.js';
 
 export class TgPushSync {
   // Сюда вставишь URL твоего бота, когда задеплоишь его (например, 'https://onrender.com')
-  static BOT_SYNC_URL = 'https://https://life-planner-bot.labyt2.workers.dev/sync';
+  static BOT_SYNC_URL = 'https://life-planner-bot.labyt2.workers.dev/sync';
 
   static async pushScheduleToBot() {
     if (!this.BOT_SYNC_URL) return;
