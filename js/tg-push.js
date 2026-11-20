@@ -6,13 +6,10 @@ export class TgPushSync {
 
     static extractTelegramUserId() {
     const tg = window.Telegram?.WebApp;
-
-    // 1. Стандартный объект Telegram WebApp
     if (tg?.initDataUnsafe?.user?.id) {
       return tg.initDataUnsafe.user.id;
     }
 
-    // 2. Парсинг из строки initData или из URL-хэша (#tgWebAppData=...)
     try {
       let rawInitData = tg?.initData || '';
       if (!rawInitData && window.location.hash) {
@@ -38,22 +35,10 @@ export class TgPushSync {
   }
 
   static async pushScheduleToBot() {
-    const tg = window.Telegram?.WebApp;
-    const notify = (msg) => {
-      if (tg?.showAlert) tg.showAlert(msg);
-      else alert(msg);
-    };
-
-    if (!this.BOT_SYNC_URL || this.BOT_SYNC_URL.includes('ВСТАВЬ_СЮДА')) {
-      notify('⚠️ Не вписан BOT_SYNC_URL в файле js/tg-push.js');
-      return;
-    }
+    if (!this.BOT_SYNC_URL || this.BOT_SYNC_URL.includes('ТВОЙ_ВОРКЕР')) return;
 
     const chatId = this.extractTelegramUserId();
-    if (!chatId) {
-      notify(`⚠️ ID не найден. URL: ${window.location.href.slice(0, 60)}`);
-      return;
-    }
+    if (!chatId) return;
 
     const payload = {
       chatId,
@@ -63,14 +48,11 @@ export class TgPushSync {
     };
 
     try {
-      const resp = await fetch(this.BOT_SYNC_URL, {
+      await fetch(this.BOT_SYNC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      notify(resp.ok ? `✅ Синхронизировано! (ID: ${chatId})` : `❌ Ошибка сервера: ${resp.status}`);
-    } catch (err) {
-      notify(`❌ Ошибка сети: ${err.message}`);
-    }
+    } catch (_) {}
   }
 }
