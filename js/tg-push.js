@@ -4,7 +4,7 @@ export class TgPushSync {
   // ВСТАВЬ СЮДА СВОЙ АДРЕС ВОРКЕРА С /sync НА КОНЦЕ:
   static BOT_SYNC_URL = 'https://life-planner-bot.labyt2.workers.dev/sync';
 
-    static extractTelegramUserId() {
+     static extractTelegramUserId() {
     const tg = window.Telegram?.WebApp;
     if (tg?.initDataUnsafe?.user?.id) {
       return tg.initDataUnsafe.user.id;
@@ -34,21 +34,59 @@ export class TgPushSync {
     return null;
   }
 
-  static async pushScheduleToBot() {
-    if (!this.BOT_SYNC_URL || this.BOT_SYNC_URL.includes('ТВОЙ_ВОРКЕР')) return;
+  // Загрузка актуальной базы с сервера при открытии на любом устройстве
+  static async pullScheduleFromBot() {
+    if (!this.BOT_BASE_URL || this.BOT_BASE_URL.includes('ТВОЙ_ВОРКЕР')) return false;
+    const chatId = this.extractTelegramUserId();
+    if (!chatId) return false;
 
+    try {
+      const resp = await fetch(`${this.BOT_BASE_URL}/load?chatId=${chatId}`);
+      if (!resp.ok) return false;
+      const remote = await resp.json();
+      if (remote.empty) return false;
+
+      if (Array.isArray(remote.allAlarms)) {
+        localStorage.setItem(PlannerStore.KEYS.ALARMS, JSON.stringify(remote.allAlarms));
+      }
+      if (Array.isArray(remote.events)) {
+        localStorage.setItem(PlannerStore.KEYS.EVENTS, JSON.stringify(remote.events));
+      }
+      if (Array.isArray(remote.workouts)) {
+        localStorage.setItem(PlannerStore.KEYS.WORKOUTS, JSON.stringify(remote.workouts));
+      }
+      if (Array.isArray(remote.exercises)) {
+        localStorage.setItem(PlannerStore.KEYS.EXERCISES, JSON.stringify(remote.exercises));
+      }
+      if (remote.logs && typeof remote.logs === 'object') {
+        localStorage.setItem(PlannerStore.KEYS.LOGS, JSON.stringify(remote.logs));
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Отправка локальных изменений на сервер
+  static async pushScheduleToBot() {
+    if (!this.BOT_BASE_URL || this.BOT_BASE_URL.includes('ТВОЙ_ВОРКЕР')) return;
     const chatId = this.extractTelegramUserId();
     if (!chatId) return;
 
+    const allAlarms = PlannerStore.getAlarms();
     const payload = {
       chatId,
       timezoneOffsetMin: new Date().getTimezoneOffset(),
-      alarms: PlannerStore.getAlarms().filter((a) => a.enabled),
-      events: PlannerStore.getEvents()
+      alarms: allAlarms.filter((a) => a.enabled),
+      allAlarms,
+      events: PlannerStore.getEvents(),
+      workouts: PlannerStore.getWorkouts(),
+      exercises: PlannerStore.getExercises(),
+      logs: PlannerStore.getLogs()
     };
 
     try {
-      await fetch(this.BOT_SYNC_URL, {
+      await fetch(`${this.BOT_BASE_URL}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

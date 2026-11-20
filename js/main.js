@@ -107,7 +107,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Синхронизируем расписание с ботом при каждом открытии Mini App
-  TgPushSync.pushScheduleToBot();
+  const updatedFromServer = await TgPushSync.pullScheduleFromBot();
+  if (updatedFromServer) {
+    builder.renderExerciseOptions();
+    builder.renderSavedWorkouts();
+    planner.render();
+    todayView.render();
+    stats.render();
+  } else {
+    await TgPushSync.pushScheduleToBot();
+  }
 
   document.getElementById('mainTabs').addEventListener('click', (e) => {
     const btn = e.target.closest('.tab-btn');
