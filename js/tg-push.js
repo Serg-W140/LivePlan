@@ -2,7 +2,7 @@ import { PlannerStore } from './store.js';
 
 export class TgPushSync {
   // ВСТАВЬ СЮДА СВОЙ АДРЕС ВОРКЕРА С /sync НА КОНЦЕ:
-  static BOT_SYNC_URL = 'https://ТВОЙ_ВОРКЕР.workers.dev/sync';
+  static BOT_SYNC_URL = 'https://life-planner-bot.labyt2.workers.dev/sync';
 
   static async pushScheduleToBot(showDebug = false) {
     if (!this.BOT_SYNC_URL || this.BOT_SYNC_URL.includes('ТВОЙ_ВОРКЕР')) return;
