@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     onDataChanged: () => {
       todayView.render();
       stats.render();
-      TgPushSync.pushScheduleToBot();
+      TgPushSync.pushScheduleToBot(true);
     }
   });
 
