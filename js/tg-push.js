@@ -4,13 +4,21 @@ export class TgPushSync {
   // ВСТАВЬ СЮДА СВОЙ АДРЕС ВОРКЕРА С /sync НА КОНЦЕ:
   static BOT_SYNC_URL = 'https://life-planner-bot.labyt2.workers.dev/sync';
 
-  static async pushScheduleToBot(showDebug = false) {
-    if (!this.BOT_SYNC_URL || this.BOT_SYNC_URL.includes('ТВОЙ_ВОРКЕР')) return;
-
+   static async pushScheduleToBot() {
     const tg = window.Telegram?.WebApp;
+    const notify = (msg) => {
+      if (tg?.showAlert) tg.showAlert(msg);
+      else alert(msg);
+    };
+
+    if (!this.BOT_SYNC_URL || this.BOT_SYNC_URL.includes('ВСТАВЬ_СЮДА')) {
+      notify('⚠️ Не вписан BOT_SYNC_URL в файле js/tg-push.js');
+      return;
+    }
+
     const tgUser = tg?.initDataUnsafe?.user;
     if (!tgUser?.id) {
-      if (showDebug && tg?.showAlert) tg.showAlert('Ошибка: Telegram не передал user.id (откройте через кнопку меню бота)');
+      notify('⚠️ Нет Telegram user.id (запущено не через кнопку меню бота)');
       return;
     }
 
@@ -27,13 +35,9 @@ export class TgPushSync {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (showDebug && tg?.showAlert) {
-        tg.showAlert(resp.ok ? '✅ Синхронизировано с ботом!' : `❌ Ошибка сервера: ${resp.status}`);
-      }
+      notify(resp.ok ? '✅ Успешно отправлено в бота!' : `❌ Ошибка сервера: ${resp.status}`);
     } catch (err) {
-      if (showDebug && tg?.showAlert) {
-        tg.showAlert(`❌ Сеть недоступна (возможно, блокировка workers.dev оператором): ${err.message}`);
-      }
+      notify(`❌ Ошибка сети (оператор блокирует workers.dev?): ${err.message}`);
     }
   }
 }
