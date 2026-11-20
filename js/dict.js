@@ -161,7 +161,17 @@ export const DICT = {
     ex_heavybag: 'Работа на мешке',
     ex_cooldown: 'Заминка и растяжка',
     wk_base: 'База: Турник и отжимания',
-    wk_boxing: 'Бокс: Раунды и СФП'
+    wk_boxing: 'Бокс: Раунды и СФП',
+
+    streakLabel: '🔥 Серия: {count} дн.',
+    statsDone30d: 'Выполнено за 30 дн.: {count}',
+    statsActiveDays: 'Активных дней: {count} / 30',
+    backupTitle: '💾 Резервная копия данных',
+    btnExportJson: '⬇ Скачать копию (.json)',
+    btnImportJson: '⬆ Восстановить из файла',
+    backupInvalidFile: 'Неверный формат файла резервной копии.',
+    backupConfirmRestore: 'Текущие данные будут заменены данными из файла. Продолжить?',
+    backupSuccess: 'Данные успешно восстановлены!',
   },
 
   en: {
@@ -317,6 +327,17 @@ export const DICT = {
     ex_heavybag: 'Heavy Bag',
     ex_cooldown: 'Cool-down & Stretching',
     wk_base: 'Base: Pull-ups & Push-ups',
-    wk_boxing: 'Boxing: Rounds & Conditioning'
+    wk_boxing: 'Boxing: Rounds & Conditioning',
+
+    streakLabel: '🔥 Streak: {count} d.',
+    statsDone30d: 'Completed (30d): {count}',
+    statsActiveDays: 'Active days: {count} / 30',
+    backupTitle: '💾 Data Backup',
+    btnExportJson: '⬇ Download Backup (.json)',
+    btnImportJson: '⬆ Restore from File',
+    backupInvalidFile: 'Invalid backup file format.',
+    backupConfirmRestore: 'Current data will be replaced with the backup file. Continue?',
+    backupSuccess: 'Data restored successfully!',
+
   }
 };

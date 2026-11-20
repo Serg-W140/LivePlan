@@ -515,3 +515,24 @@ input[type="checkbox"] {
 .cal-cell.selected .cal-dot {
   background: #000000;
 }
+
+.heat-strip {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.heat-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--input-bg);
+}
+
+.heat-cell.lvl-1 {
+  background: rgba(67, 160, 71, 0.5);
+}
+
+.heat-cell.lvl-2 {
+  background: var(--rest);
+}

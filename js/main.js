@@ -3,6 +3,9 @@ import { TimerController } from './timer.js';
 import { WorkoutBuilder } from './builder.js';
 import { TodayView } from './today.js';
 import { PlannerManager } from './planner.js';
+import { StatsManager } from './stats.js';
+import { BackupManager } from './backup.js';
+import { TgPushSync } from './tg-push.js';
 import { PlannerStore } from './store.js';
 import { Platform } from './platform.js';
 import { I18n } from './i18n.js';
@@ -23,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   I18n.init();
 
   const sound = new SoundEngine();
+  const stats = new StatsManager();
 
   const todayView = new TodayView({
     onRunWorkout: (workout, eventUid) => {
@@ -31,19 +35,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     },
     onDataChanged: () => {
       planner.renderEvents();
+      stats.render();
+      TgPushSync.pushScheduleToBot();
     }
+  });
+
+  document.getElementById('todayItemsList')?.addEventListener('click', () => {
+    setTimeout(() => stats.render(), 0);
   });
 
   const timer = new TimerController(sound, {
     onWorkoutFinished: (eventUid) => {
       PlannerStore.toggleCompleted(PlannerStore.getLocalDateStr(), eventUid);
       todayView.render();
+      stats.render();
     }
   });
 
   const planner = new PlannerManager(sound, {
     onDataChanged: () => {
       todayView.render();
+      stats.render();
+      TgPushSync.pushScheduleToBot();
     }
   });
 
@@ -56,6 +69,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       planner.renderWorkoutOptions();
       planner.renderEvents();
       todayView.render();
+      TgPushSync.pushScheduleToBot();
+    }
+  });
+
+  new BackupManager({
+    onRestored: () => {
+      builder.renderExerciseOptions();
+      builder.renderSavedWorkouts();
+      planner.render();
+      todayView.render();
+      stats.render();
+      TgPushSync.pushScheduleToBot();
     }
   });
 
@@ -66,6 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     builder.renderSavedWorkouts();
     planner.render();
     todayView.render();
+    stats.render();
     if (!timer.isRunning && timer.activeEventUid === null) {
       timer.loadFreeMode();
     }
@@ -77,7 +103,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     builder.renderSavedWorkouts();
     planner.render();
     todayView.render();
+    stats.render();
   }
+
+  // Синхронизируем расписание с ботом при каждом открытии Mini App
+  TgPushSync.pushScheduleToBot();
 
   document.getElementById('mainTabs').addEventListener('click', (e) => {
     const btn = e.target.closest('.tab-btn');

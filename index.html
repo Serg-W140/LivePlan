@@ -54,6 +54,12 @@
           <div id="todayProgressBar" class="progress-fill" style="width: 0%;"></div>
         </div>
 
+        <div class="row" style="font-size: 0.8rem; color: var(--text-muted);">
+          <span id="streakBadge" style="color: var(--prep); font-weight: 700;">🔥 Серия: 0 дн.</span>
+          <div id="statsHeatStrip" class="heat-strip"></div>
+        </div>
+
+
         <div id="todayItemsList" class="workout-list"></div>
 
         <button type="button" id="openEveningBtn" class="btn btn-accent full-btn" data-i18n="btnEveningReview">
@@ -258,6 +264,21 @@
         <button type="button" id="exportIcsBtn" class="btn btn-preset full-btn" data-i18n="btnExportCalendar">
           📅 Экспорт в календарь телефона (.ics)
         </button>
+
+        <!-- Статистика и бэкап -->
+        <div class="settings">
+            <h2 data-i18n="backupTitle">💾 Резервная копия данных</h2>
+            <div class="row" style="font-size: 0.85rem; color: var(--text-muted);">
+                <span id="statsDone30d"></span>
+                <span id="statsActiveDays"></span>
+            </div>
+            <div class="controls">
+                <button type="button" id="exportJsonBtn" class="btn btn-preset btn-sm" data-i18n="btnExportJson">⬇ Скачать копию (.json)</button>
+                <button type="button" id="importJsonBtn" class="btn btn-preset btn-sm" data-i18n="btnImportJson">⬆ Восстановить из файла</button>
+            </div>
+            <input type="file" id="importJsonInput" accept=".json,application/json" hidden>
+        </div>
+        
       </div>
     </section>
 
