@@ -12,6 +12,14 @@ export class TgPushSync {
     btn.textContent = `${base} ${icon}`;
   }
 
+  static #syncInputUI(id) {
+    if (!id) return;
+    const input = document.getElementById('linkTgIdInput');
+    const hint = document.getElementById('linkTgIdStatus');
+    if (input && !input.value) input.value = id;
+    if (hint) hint.textContent = `☁️ ID: ${id}`;
+  }
+
   static extractTelegramUserId() {
     const tg = window.Telegram?.WebApp;
     let detectedId = null;
@@ -23,6 +31,7 @@ export class TgPushSync {
     if (!detectedId) {
       try {
         let rawInitData = tg?.initData || '';
+
         if (!rawInitData && window.location.hash) {
           const hashParams = new URLSearchParams(window.location.hash.slice(1));
           rawInitData = hashParams.get('tgWebAppData') || '';
@@ -33,6 +42,10 @@ export class TgPushSync {
         }
 
         if (rawInitData) {
+          // На мобильных клиентах строка бывает закодирована повторно
+          if (rawInitData.includes('%3D') || rawInitData.includes('%26')) {
+            rawInitData = decodeURIComponent(rawInitData);
+          }
           const params = new URLSearchParams(rawInitData);
           const userJson = params.get('user');
           if (userJson) {
@@ -43,14 +56,15 @@ export class TgPushSync {
       } catch (_) {}
     }
 
-    // Если открыто внутри Telegram — запоминаем ID автоматически
     if (detectedId) {
       localStorage.setItem(this.LINK_KEY, detectedId);
+      this.#syncInputUI(detectedId);
       return detectedId;
     }
 
-    // Иначе берём ID, привязанный вручную в обычном браузере / PWA
-    return localStorage.getItem(this.LINK_KEY) || null;
+    const saved = localStorage.getItem(this.LINK_KEY) || null;
+    if (saved) this.#syncInputUI(saved);
+    return saved;
   }
 
   static initLinkUI(onLinkedCallback) {
@@ -59,11 +73,19 @@ export class TgPushSync {
     const hint = document.getElementById('linkTgIdStatus');
     if (!input || !btn) return;
 
-    const currentId = this.extractTelegramUserId();
-    if (currentId) {
-      input.value = currentId;
-      if (hint) hint.textContent = `☁️ ID: ${currentId}`;
-    }
+    this.extractTelegramUserId();
+
+    // Повторная проверка, если мобильный Telegram инициализирует WebApp с задержкой
+    Array.of(500, 1500).forEach((delay) => {
+      setTimeout(async () => {
+        const prev = input.value;
+        const found = this.extractTelegramUserId();
+        if (found && found !== prev) {
+          const pulled = await this.pullScheduleFromBot();
+          if (pulled && onLinkedCallback) onLinkedCallback();
+        }
+      }, delay);
+    });
 
     btn.addEventListener('click', async () => {
       const cleanId = input.value.trim().replace(/\D/g, '');
@@ -75,7 +97,7 @@ export class TgPushSync {
       }
 
       localStorage.setItem(this.LINK_KEY, cleanId);
-      if (hint) hint.textContent = `☁️ ID: ${cleanId}`;
+      this.#syncInputUI(cleanId);
 
       const pulled = await this.pullScheduleFromBot();
       if (!pulled) {
@@ -92,7 +114,6 @@ export class TgPushSync {
     }
     const chatId = this.extractTelegramUserId();
     if (!chatId) return false;
-    this.#syncInputUI(chatId);
 
     try {
       const resp = await fetch(`${this.BOT_BASE_URL}/load?chatId=${chatId}`);
@@ -133,8 +154,6 @@ export class TgPushSync {
     }
     const chatId = this.extractTelegramUserId();
     if (!chatId) return;
-    this.#syncInputUI(chatId);
-
 
     const allAlarms = PlannerStore.getAlarms();
     const payload = {
@@ -159,13 +178,4 @@ export class TgPushSync {
       this.#setBadge('❌');
     }
   }
-
-  static #syncInputUI(id) {
-    if (!id) return;
-    const input = document.getElementById('linkTgIdInput');
-    const hint = document.getElementById('linkTgIdStatus');
-    if (input && !input.value) input.value = id;
-    if (hint) hint.textContent = `☁️ ID: ${id}`;
-  }
 }
-

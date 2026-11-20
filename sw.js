@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'life-planner-v11';
+const CACHE_NAME = 'life-planner-v12';
 const ASSETS = Array.of(
   './',
   './index.html',
