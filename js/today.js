@@ -11,6 +11,7 @@ export class TodayView {
     this.#cacheDOM();
     this.#bindEvents();
     this.render();
+    this.#startDayRolloverMonitor();
   }
 
   #cacheDOM() {
@@ -285,4 +286,27 @@ export class TodayView {
     })
     .join('');
     }
+
+    #startDayRolloverMonitor() {
+    this.lastTodayStr = PlannerStore.getLocalDateStr(new Date());
+
+    const checkNewDay = () => {
+      const now = new Date();
+      const currentStr = PlannerStore.getLocalDateStr(now);
+      if (currentStr !== this.lastTodayStr) {
+        this.lastTodayStr = currentStr;
+        this.selectedDate = now;
+        this.viewMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        this.render();
+      }
+    };
+
+    setInterval(checkNewDay, 30000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkNewDay();
+      }
+    });
+  }
+
 }
