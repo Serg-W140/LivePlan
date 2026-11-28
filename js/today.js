@@ -301,7 +301,7 @@ export class TodayView {
       }
     };
 
-    setInterval(checkNewDay, 30000);
+    setInterval(checkNewDay, 60000);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         checkNewDay();
